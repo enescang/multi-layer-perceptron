@@ -36,7 +36,6 @@ func HandleInputLayer() *mlp.Layer {
 			{Value: 0.1},
 			{Value: 0.4},
 		},
-		InsideWeights: &[]mlp.CellWeight{},
 	}
 	cell2 := mlp.Cell{
 		Name:       "Input Layer Cell 2",
@@ -46,7 +45,6 @@ func HandleInputLayer() *mlp.Layer {
 			{Value: 0.8},
 			{Value: 0.6},
 		},
-		InsideWeights: &[]mlp.CellWeight{},
 	}
 	layer1.AddCell(cell1)
 	layer1.AddCell((cell2))
@@ -63,7 +61,6 @@ func HandleLayer2() *mlp.Layer {
 		OutsideWeights: &[]mlp.CellWeight{
 			{Value: 0.3},
 		},
-		InsideWeights: &[]mlp.CellWeight{},
 	}
 	cell2 := mlp.Cell{
 		Name:       "Second Layer Cell 2",
@@ -72,7 +69,6 @@ func HandleLayer2() *mlp.Layer {
 		OutsideWeights: &[]mlp.CellWeight{
 			{Value: 0.9},
 		},
-		InsideWeights: &[]mlp.CellWeight{},
 	}
 	layer1.AddCell(cell1)
 	layer1.AddCell((cell2))
@@ -90,7 +86,6 @@ func HandleOutputLayer() *mlp.Layer {
 		ErrorDelta:     0,
 		Expected:       0.5,
 		OutsideWeights: &[]mlp.CellWeight{},
-		InsideWeights:  &[]mlp.CellWeight{},
 	}
 	layer1.AddCell(cell1)
 	return &layer1

@@ -7,10 +7,8 @@ type Cell struct {
 	ErrorDelta     float64
 	Expected       float64
 	OutsideWeights *[]CellWeight
-	InsideWeights  *[]CellWeight
 }
 
 type CellWeight struct {
-	Value      float64
-	ValueDelta float64
+	Value float64
 }
