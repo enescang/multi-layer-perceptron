@@ -25,7 +25,15 @@ func main() {
 	testMlp.Build()
 	//testMlp.PrintBuildedLayers()
 
-	testMlp.Iteration()
+	for {
+		completed := testMlp.Iteration()
+		if completed {
+			break
+		}
+	}
+
+	result := testMlp.IterateWithRow(mlp.InputRow{Inputs: []float64{0.2, 0.1}, Expecteds: []float64{0.3}})
+	fmt.Println(result)
 }
 
 func GetInputRows() *[]mlp.InputRow {
@@ -34,8 +42,7 @@ func GetInputRows() *[]mlp.InputRow {
 	row2 := mlp.InputRow{Inputs: []float64{0.11, 0.2}, Expecteds: []float64{0.31}}
 	row3 := mlp.InputRow{Inputs: []float64{0.23, 0.05}, Expecteds: []float64{0.28}}
 	row4 := mlp.InputRow{Inputs: []float64{0.32, 0.1}, Expecteds: []float64{0.42}}
-	fmt.Println(row4)
-	rows = append(rows, row1, row2, row3)
+	rows = append(rows, row1, row2, row3, row4)
 	return &rows
 }
 

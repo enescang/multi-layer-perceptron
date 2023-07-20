@@ -41,28 +41,37 @@ func (mlp *MLP) PrintBuildedLayers() {
 	}
 }
 
-func (mlp *MLP) Iteration() {
+func (mlp *MLP) Iteration() (completed bool) {
 	var correct int
 	for _, row := range *mlp.Inputs {
 		mlp.IterationCount++
-		mlp.prepareInputAndOutputLayers(row)
-		useBackPropagation := mlp.calculateHiddenLayerCellValues()
-		if useBackPropagation {
-			//fmt.Println("USE BACKPROPAGATION")
-			mlp.CalculateErrorDelta()
-			mlp.CalculateNewWeights()
-			continue
+		iteration_result := mlp.IterateWithRow(row)
+		if iteration_result.Passed {
+			correct++
 		}
-		correct++
 	}
 	if mlp.IterationCount%10000 == 0 {
 		fmt.Println("ITERATION:", mlp.IterationCount, " TOTAL CORRECT:", correct)
 	}
 	if correct >= len(*mlp.Inputs) {
 		fmt.Println("ITERATION DONE!", mlp.IterationCount)
-		return
+		completed = true
+		return completed
 	}
-	mlp.Iteration()
+	completed = false
+	return completed
+}
+
+func (mlp *MLP) IterateWithRow(row InputRow) (iteration_result IterationResult) {
+	mlp.prepareInputAndOutputLayers(row)
+	iteration_result = mlp.calculateHiddenLayerCellValues()
+	if iteration_result.Passed == false {
+		//fmt.Println("USE BACKPROPAGATION")
+		mlp.CalculateErrorDelta()
+		mlp.CalculateNewWeights()
+		return iteration_result
+	}
+	return iteration_result
 }
 
 func (mlp *MLP) prepareInputAndOutputLayers(row InputRow) {
@@ -98,7 +107,7 @@ func (mlp *MLP) prepareInputAndOutputLayers(row InputRow) {
 	}
 }
 
-func (mlp *MLP) calculateHiddenLayerCellValues() (useBackPropagation bool) {
+func (mlp *MLP) calculateHiddenLayerCellValues() (result IterationResult) {
 	var pointerLayer *Layer
 	var pointerPrevLayer *Layer
 	var pointerCell *Cell
@@ -128,14 +137,19 @@ func (mlp *MLP) calculateHiddenLayerCellValues() (useBackPropagation bool) {
 			pointerCell.ValueDelta = new_value
 			pointerCell.Value = new_value
 			if pointerLayer.IsOutput {
-				if math.Abs(pointerCell.Expected-pointerCell.Value) > mlp.ErrorRate {
-					useBackPropagation = true
+				var err_value float64 = pointerCell.Expected - pointerCell.Value
+				output_result := OutputResult{Output: pointerCell.Value, Expected: pointerCell.Expected, Error: err_value}
+				result.Outputs = append(result.Outputs, output_result)
+				if math.Abs(err_value) > mlp.ErrorRate {
+					result.Passed = false
+				} else {
+					result.Passed = true
 				}
 			}
 			//fmt.Println(pointerCell.Name, "delta VALUE:", pointerCell.ValueDelta)
 		}
 	}
-	return useBackPropagation
+	return result
 }
 
 func (mlp *MLP) CalculateErrorDelta() {
