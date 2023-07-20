@@ -7,9 +7,11 @@ import (
 )
 
 type MLP struct {
-	Layers       *[]Layer
-	LearningRate float64
-	ErrorRate    float64
+	Layers         *[]Layer
+	Inputs         *[]InputRow
+	LearningRate   float64
+	ErrorRate      float64
+	IterationCount int
 }
 
 func (mlp *MLP) Build() {
@@ -40,11 +42,59 @@ func (mlp *MLP) PrintBuildedLayers() {
 }
 
 func (mlp *MLP) Iteration() {
-	useBackPropagation := mlp.calculateHiddenLayerCellValues()
-	if useBackPropagation {
-		fmt.Println("USE BACKPROPAGATION")
-		mlp.CalculateErrorDelta()
-		mlp.CalculateNewWeights()
+	var correct int
+	for _, row := range *mlp.Inputs {
+		mlp.IterationCount++
+		mlp.prepareInputAndOutputLayers(row)
+		useBackPropagation := mlp.calculateHiddenLayerCellValues()
+		if useBackPropagation {
+			//fmt.Println("USE BACKPROPAGATION")
+			mlp.CalculateErrorDelta()
+			mlp.CalculateNewWeights()
+			continue
+		}
+		correct++
+	}
+	if mlp.IterationCount%10000 == 0 {
+		fmt.Println("ITERATION:", mlp.IterationCount, " TOTAL CORRECT:", correct)
+	}
+	if correct >= len(*mlp.Inputs) {
+		fmt.Println("ITERATION DONE!", mlp.IterationCount)
+		return
+	}
+	mlp.Iteration()
+}
+
+func (mlp *MLP) prepareInputAndOutputLayers(row InputRow) {
+	var inputLayerPointer *Layer
+	var outputLayerPointer *Layer
+	for layer_index, layer_val := range *mlp.Layers {
+		if layer_val.IsInput {
+			inputLayerPointer = &(*mlp.Layers)[layer_index]
+		}
+		if layer_val.IsOutput {
+			outputLayerPointer = &(*mlp.Layers)[layer_index]
+		}
+		if inputLayerPointer != nil && outputLayerPointer != nil {
+			break
+		}
+	}
+
+	if inputLayerPointer == nil {
+		log.Fatal("Error: mlp.PrepareInputLayer. Input Layer Not Found")
+		return
+	}
+	if outputLayerPointer == nil {
+		log.Fatal("Error: mlp.PrepareInputLayer. Output Layer Not Found")
+		return
+	}
+
+	for cell_index := range *inputLayerPointer.Cells {
+		(*inputLayerPointer.Cells)[cell_index].Value = row.Inputs[cell_index]
+	}
+
+	for cell_index := range *outputLayerPointer.Cells {
+		(*outputLayerPointer.Cells)[cell_index].Expected = row.Expecteds[cell_index]
 	}
 }
 

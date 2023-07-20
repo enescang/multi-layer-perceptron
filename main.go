@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/enescang/multi-layer-perceptron/mlp"
 )
 
@@ -13,15 +15,28 @@ func main() {
 	testMlp := CreateMLP()
 	testMlp.LearningRate = 1
 	testMlp.ErrorRate = 0.01
+
 	inputLayer := HandleInputLayer()
 	layer2 := HandleLayer2()
 	outputLayer := HandleOutputLayer()
+	testMlp.Inputs = GetInputRows()
 
 	testMlp.Layers = &[]mlp.Layer{*inputLayer, *layer2, *outputLayer}
 	testMlp.Build()
-	testMlp.PrintBuildedLayers()
+	//testMlp.PrintBuildedLayers()
 
 	testMlp.Iteration()
+}
+
+func GetInputRows() *[]mlp.InputRow {
+	rows := []mlp.InputRow{}
+	row1 := mlp.InputRow{Inputs: []float64{0.1, 0.1}, Expecteds: []float64{0.2}}
+	row2 := mlp.InputRow{Inputs: []float64{0.11, 0.2}, Expecteds: []float64{0.31}}
+	row3 := mlp.InputRow{Inputs: []float64{0.23, 0.05}, Expecteds: []float64{0.28}}
+	row4 := mlp.InputRow{Inputs: []float64{0.32, 0.1}, Expecteds: []float64{0.42}}
+	fmt.Println(row4)
+	rows = append(rows, row1, row2, row3)
+	return &rows
 }
 
 func HandleInputLayer() *mlp.Layer {
@@ -30,7 +45,7 @@ func HandleInputLayer() *mlp.Layer {
 	layer1.Name = "INPUT LAYER"
 	cell1 := mlp.Cell{
 		Name:       "Input Layer Cell 1",
-		Value:      0.35,
+		Value:      0,
 		ValueDelta: 0,
 		OutsideWeights: &[]mlp.CellWeight{
 			{Value: 0.1},
@@ -39,7 +54,7 @@ func HandleInputLayer() *mlp.Layer {
 	}
 	cell2 := mlp.Cell{
 		Name:       "Input Layer Cell 2",
-		Value:      0.9,
+		Value:      0,
 		ValueDelta: 0,
 		OutsideWeights: &[]mlp.CellWeight{
 			{Value: 0.8},
@@ -84,7 +99,7 @@ func HandleOutputLayer() *mlp.Layer {
 		Value:          0,
 		ValueDelta:     0,
 		ErrorDelta:     0,
-		Expected:       0.5,
+		Expected:       0,
 		OutsideWeights: &[]mlp.CellWeight{},
 	}
 	layer1.AddCell(cell1)
