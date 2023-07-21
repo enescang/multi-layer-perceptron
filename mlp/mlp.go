@@ -50,7 +50,7 @@ func (mlp *MLP) Iteration() (completed bool) {
 			correct++
 		}
 	}
-	if mlp.IterationCount%10000 == 0 {
+	if mlp.IterationCount%1000000 == 0 {
 		fmt.Println("ITERATION:", mlp.IterationCount, " TOTAL CORRECT:", correct)
 	}
 	if correct >= len(*mlp.Inputs) {
