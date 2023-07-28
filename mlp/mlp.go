@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 )
 
 type MLP struct {
@@ -43,17 +44,22 @@ func (mlp *MLP) PrintBuildedLayers() {
 
 func (mlp *MLP) Iteration() (completed bool) {
 	var correct int
-	for _, row := range *mlp.Inputs {
-		mlp.IterationCount++
+	mlp.IterationCount++
+	mlp.ShuffleInputs()
+	for i, row := range *mlp.Inputs {
+		//start_at := time.Now()
 		iteration_result := mlp.IterateWithRow(row)
+		if i%5 == 0 {
+			//fmt.Println("ONE ROW ITERATION DONE", time.Since(start_at), i, iteration_result)
+		}
 		if iteration_result.Passed {
 			correct++
 		}
 	}
-	if mlp.IterationCount%1000000 == 0 {
-		fmt.Println("ITERATION:", mlp.IterationCount, " TOTAL CORRECT:", correct)
+	if mlp.IterationCount%100 == 0 {
+		fmt.Println("ITERATION:", mlp.IterationCount, " TOTAL CORRECT:", correct, float64(correct)/float64(len(*mlp.Inputs))*100)
 	}
-	if correct >= len(*mlp.Inputs) {
+	if mlp.IterationCount > 3000 && correct >= len(*mlp.Inputs)*90/100 || (mlp.IterationCount == 10 && false) {
 		fmt.Println("ITERATION DONE!", mlp.IterationCount)
 		completed = true
 		return completed
@@ -129,18 +135,21 @@ func (mlp *MLP) calculateHiddenLayerCellValues() (result IterationResult) {
 				var prev_layer_current_cell *Cell
 				prev_layer_current_cell = &(*pointerPrevLayer.Cells)[prev_layer_cell_index]
 				cell_outside_weight_value := (*prev_layer_current_cell.OutsideWeights)[cell_index].Value
-				//fmt.Println("WEIGHT:", cell_outside_weight_value, " CUURENT VALUE", prev_layer_current_cell.Value)
+				//fmt.Println("WEIGHT:", cell_outside_weight_value, " CUURENT VALUE", prev_layer_current_cell.Value, pointerPrevLayer.Name)
 				new_value += (cell_outside_weight_value * prev_layer_current_cell.Value)
 			}
-
+			//fmt.Println("BEFORE Activation:", new_value)
 			new_value = Sigmoid(new_value)
+			//fmt.Println("AFTER Activation:", new_value)
+
 			pointerCell.ValueDelta = new_value
 			pointerCell.Value = new_value
 			if pointerLayer.IsOutput {
 				var err_value float64 = pointerCell.Expected - pointerCell.Value
 				output_result := OutputResult{Output: pointerCell.Value, Expected: pointerCell.Expected, Error: err_value}
 				result.Outputs = append(result.Outputs, output_result)
-				if math.Abs(err_value) > mlp.ErrorRate {
+				//fmt.Println("ERROR:", err_value, "%", (pointerCell.Expected * mlp.ErrorRate / 100))
+				if math.Abs(err_value) > (pointerCell.Expected * mlp.ErrorRate / 100) {
 					result.Passed = false
 				} else {
 					result.Passed = true
@@ -166,7 +175,7 @@ func (mlp *MLP) CalculateErrorDelta() {
 				var error_delta float64 = 0
 				error_delta = cell.Value * (1 - cell.Value) * (cell.Expected - cell.Value)
 				cell.ErrorDelta = error_delta
-				//fmt.Println(cell.Name, "ERROR DELTA IS", cell.ErrorDelta)
+				//fmt.Println("OUTPUT ERROR:", error_delta, "cell value:", cell.Value, "expected:", cell.Expected)
 			}
 			continue
 		}
@@ -212,8 +221,26 @@ func (mlp *MLP) CalculateNewWeights() {
 				//fmt.Println("CHECK", pointerCell.Name, pointerCell.Value)
 				delta = mlp.LearningRate * pointerCell.Value * (*pointerLayer.Next.Cells)[weight_index].ErrorDelta
 				pointerWeight.Value = pointerWeight.Value + delta
-				//fmt.Println(pointerCell.Name, "WEIGHT:", weight_index, "DELTA:", delta, "ACTUAL VALUE:", pointerWeight.Value)
+				var temp_limit float64
+				temp_limit = 0.0000000000000
+				if mlp.IterationCount%100 == 0 && delta < temp_limit && false {
+					fmt.Println("->>>>>>>")
+					fmt.Println(pointerCell.Name, "Learning Rate:", mlp.LearningRate)
+					fmt.Println("Pointer Cell Value:", pointerCell.Value)
+					fmt.Println("Next Cell Error Delta:", (*pointerLayer.Next.Cells)[weight_index].ErrorDelta)
+					fmt.Println("DELTA:", delta, "SUBSTRACT:", delta-temp_limit)
+					fmt.Println("-<<<<<<<")
+					//fmt.Println( "WEIGHT:", weight_index, "DELTA:", delta, "ACTUAL VALUE:", pointerWeight.Value)
+				}
 			}
 		}
 	}
+}
+
+func (mlp *MLP) ShuffleInputs() {
+	rand.Shuffle(len(*mlp.Inputs), func(i, j int) {
+		temp := (*mlp.Inputs)[i]
+		(*mlp.Inputs)[i] = (*mlp.Inputs)[j]
+		(*mlp.Inputs)[j] = temp
+	})
 }
