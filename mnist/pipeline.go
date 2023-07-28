@@ -47,7 +47,7 @@ func (pipeline *Pipeline) AppendToFiles(folder_name string, expecteds []float64)
 func (pipeline *Pipeline) PushFilesToMLPAsInput() {
 
 	for _, batch := range pipeline.Batchs {
-		for i := 0; i < 1; i++ {
+		for i := 0; i < 120; i++ {
 			fileInfo := batch.Files[i]
 			inputRow, err := pipeline.FileInfoToInputRow(batch, fileInfo)
 			if err != nil {
@@ -110,7 +110,10 @@ func rgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel {
 	G := int(g / 257)
 	B := int(b / 257)
 	A := int(a / 257)
-	return Pixel{R, G, B, A, (R == 0 && B == 0 && G == 0)}
+	//RGB to single int value: https://stackoverflow.com/a/4801446
+	mix := 65536*R + 256*G + B
+	N := float64(1) / float64(16777215) * float64(mix)
+	return Pixel{R, G, B, A, N, (R == 0 && B == 0 && G == 0)}
 }
 
 func multiDimesionPixelToSingleDimension(pixel [][]Pixel) []Pixel {
@@ -137,11 +140,7 @@ func singleDimensionPixelToInputRow(pixel []Pixel) mlp.InputRow {
 	var inputRow mlp.InputRow
 	for _, v := range pixel {
 		var value float64
-		if v.IsBlack {
-			value = 0
-		} else {
-			value = 1
-		}
+		value = v.Normalized
 		inputRow.Inputs = append(inputRow.Inputs, value)
 	}
 	return inputRow
@@ -149,7 +148,7 @@ func singleDimensionPixelToInputRow(pixel []Pixel) mlp.InputRow {
 
 func PrintPixel(row mlp.InputRow) {
 	for index, v := range row.Inputs {
-		if v == 0 {
+		if v == 0.1 {
 			fmt.Print("@")
 		} else {
 			fmt.Print("-")
