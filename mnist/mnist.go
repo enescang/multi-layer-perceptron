@@ -16,11 +16,12 @@ import (
 
 // Pixel struct example
 type Pixel struct {
-	R       int
-	G       int
-	B       int
-	A       int
-	IsBlack bool
+	R          int
+	G          int
+	B          int
+	A          int
+	Normalized float64
+	IsBlack    bool
 }
 
 func Run() {
@@ -31,19 +32,21 @@ func Run() {
 	minstMlp.ErrorRate = 10
 
 	inputLayer := HandleInputLayer(28 * 28)
-	hl1 := RandomLayer(len(*(*inputLayer.Cells)[0].OutsideWeights), 2)
-	hl2 := RandomLayer(2, 1)
-	//hl3 := RandomLayer(3, 1)
-	//hl4 := RandomLayer(2, 5)
-	//hl5 := RandomLayer(5, 8)
-	//hl6 := RandomLayer(8, 9)
-	//hl7 := RandomLayer(9, 11)
-	//hl8 := RandomLayer(11, 1)
+	hl1 := RandomLayer(len(*(*inputLayer.Cells)[0].OutsideWeights), 28*28*2)
+	hl2 := RandomLayer(28*28*2, 196)
+	hl3 := RandomLayer(196, 98)
+	hl4 := RandomLayer(98, 49)
+	hl5 := RandomLayer(49, 25)
+	hl6 := RandomLayer(25, 12)
+	hl7 := RandomLayer(12, 6)
+	hl8 := RandomLayer(6, 3)
+	hl9 := RandomLayer(3, 3)
+	hl10 := RandomLayer(3, 1)
 
 	outputLayer := HandleOutputLayer()
 
 	minstMlp.Inputs = &[]mlp.InputRow{}
-	minstMlp.Layers = &[]mlp.Layer{*inputLayer, hl1, hl2, *outputLayer}
+	minstMlp.Layers = &[]mlp.Layer{*inputLayer, hl1, hl2, hl3, hl4, hl5, hl6, hl7, hl8, hl9, hl10, *outputLayer}
 	minstMlp.Build()
 
 	var pipeline *Pipeline
@@ -94,7 +97,6 @@ func Run() {
 	}
 	result2 := pipeline.MLP.IterateWithRow(*testRow2)
 	fmt.Println(result2)
-	//PrintPixel((*testPipeline.MLP.Inputs)[0])
 }
 
 func Rename(path string) {
@@ -118,7 +120,7 @@ func HandleInputLayer(cell_count int) *mlp.Layer {
 	layer1.Name = "INPUT LAYER"
 	layer1.Cells = &[]mlp.Cell{}
 	for i := 0; i < cell_count; i++ {
-		*layer1.Cells = append(*layer1.Cells, RandomCell(3))
+		*layer1.Cells = append(*layer1.Cells, RandomCell(cell_count, 3))
 	}
 	return &layer1
 }
@@ -217,13 +219,13 @@ func GetTestPipeline() *Pipeline {
 func RandomLayer(cell_count int, weight_count int) mlp.Layer {
 	var layer mlp.Layer
 	for i := 0; i < cell_count; i++ {
-		layer.AddCell(RandomCell(weight_count))
+		layer.AddCell(RandomCell(cell_count, weight_count))
 	}
 
 	return layer
 }
 
-func RandomCell(weight_size int) mlp.Cell {
+func RandomCell(cell_count int, weight_size int) mlp.Cell {
 	cell2 := mlp.Cell{
 		Name:           "Random Cell",
 		Value:          0,
@@ -231,7 +233,12 @@ func RandomCell(weight_size int) mlp.Cell {
 		OutsideWeights: &[]mlp.CellWeight{},
 	}
 	for i := 0; i < weight_size; i++ {
-		*cell2.OutsideWeights = append(*cell2.OutsideWeights, mlp.CellWeight{Value: getCellValue()})
+		var t float64
+		t = rand.Float64()
+		if rand.Float64() > 0.5 {
+			t = t * -1
+		}
+		*cell2.OutsideWeights = append(*cell2.OutsideWeights, mlp.CellWeight{Value: t})
 	}
 	return cell2
 }
